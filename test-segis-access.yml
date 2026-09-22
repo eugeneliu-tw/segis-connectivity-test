@@ -1,0 +1,33 @@
+name: Test SEGIS Access From Cloud
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Control test - google.com
+        run: |
+          echo "=== google.com control test ==="
+          curl -sS -o /dev/null -w "HTTP:%{http_code} TIME:%{time_total}s\n" --max-time 15 "https://www.google.com" || echo FAILED
+
+      - name: Test segis.moi.gov.tw homepage reachability
+        run: |
+          echo "=== segis.moi.gov.tw homepage ==="
+          curl -sS -o /dev/null -w "HTTP:%{http_code} TIME:%{time_total}s\n" --max-time 15 "https://segis.moi.gov.tw/STATCloud/QueryInterface" || echo FAILED
+
+      - name: Test actual data download URL
+        run: |
+          echo "=== actual download URL test ==="
+          curl -sS -o downloaded.csv -w "HTTP:%{http_code} TIME:%{time_total}s SIZE:%{size_download}bytes\n" --max-time 20 "https://segis.moi.gov.tw/STATCloud/reqcontroller.file?method=filedown.downloadproductfile&code=h8bKGFK7Qa7ojG%2f0ttap5A%3d%3d&STTIME=115Y06M&STUNIT=U01CO&BOUNDARY=%E5%85%A8%E5%9C%8B" || echo FAILED
+          echo "--- first 10 lines of downloaded file ---"
+          head -10 downloaded.csv || echo "(no file / empty)"
+
+      - name: Upload downloaded file as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: segis-test-result
+          path: downloaded.csv
+          if-no-files-found: warn
