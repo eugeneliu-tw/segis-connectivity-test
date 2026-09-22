@@ -96,45 +96,16 @@ jobs:
         run: |
           cat > segis_datasets.json << 'CONFIG_EOF'
           [
-            {"category": "人口特性", "name": "114年12月行政區人口統計_鄉鎮市區_苗栗縣", "code": "JQLKJdMPLbtH75bn0vgGBg==", "sttime": "114Y12M", "stunit": "U01TO", "boundary": "全國", "sub_boundary": "苗栗縣"}
+            {"category": "人口特性", "name": "114年12月行政區人口統計_鄉鎮市區_苗栗縣", "code": "JQLKJdMPLbtH75bn0vgGBg==", "sttime": "114Y12M", "stunit": "U01TO", "boundary": "全國", "sub_boundary": "苗栗縣"},
+            {"category": "人口特性", "name": "114年12月行政區人口指標_鄉鎮市區_苗栗縣", "code": "OG1r+fIvJj2S773GC6Qk1w==", "sttime": "114Y12M", "stunit": "U01TO", "boundary": "全國", "sub_boundary": "苗栗縣"},
+            {"category": "教育設施", "name": "114學年全國行政區國民小學統計_鄉鎮市區_苗栗縣", "code": "P8zewO50eTqbl9QuQ8zsGw==", "sttime": "114Y", "stunit": "U01TO", "boundary": "全國", "sub_boundary": "苗栗縣"},
+            {"category": "教育設施", "name": "114學年全國行政區國民中學統計_鄉鎮市區_苗栗縣", "code": "4MicHceRLBWUBNRcNH1gow==", "sttime": "114Y", "stunit": "U01TO", "boundary": "全國", "sub_boundary": "苗栗縣"},
+            {"category": "教育設施", "name": "114學年全國行政區高級中等學校統計_鄉鎮市區_苗栗縣", "code": "u3aD/knf/dc9s/9cmqyzpw==", "sttime": "114Y", "stunit": "U01TO", "boundary": "全國", "sub_boundary": "苗栗縣"},
+            {"category": "教育設施", "name": "114學年全國行政區大專校院統計_鄉鎮市區_苗栗縣", "code": "ZHQYJvDQVi+6znxQmYDlnA==", "sttime": "114Y", "stunit": "U01TO", "boundary": "全國", "sub_boundary": "苗栗縣"},
+            {"category": "醫療資源", "name": "114年12月行政區醫療院所統計_鄉鎮市區_苗栗縣", "code": "t8GT1x+Z4+IfdY+naSvZuQ==", "sttime": "114Y12M", "stunit": "U01TO", "boundary": "全國", "sub_boundary": "苗栗縣"},
+            {"category": "醫療資源", "name": "114年12月行政區護產機構統計_鄉鎮市區_苗栗縣", "code": "nW05zjXymDgWCFC6p/Q4nw==", "sttime": "114Y12M", "stunit": "U01TO", "boundary": "全國", "sub_boundary": "苗栗縣"}
           ]
           CONFIG_EOF
-
-      - name: Debug curl variants
-        run: |
-          set +e
-          echo "=== Variant A: SUB_BOUNDARY=苗栗縣, STUNIT=U01TO ==="
-          curl -sS -i --max-time 30 "https://segis.moi.gov.tw/STATCloud/reqcontroller.file?method=filedown.downloadproductfile&code=JQLKJdMPLbtH75bn0vgGBg%3D%3D&STTIME=114Y12M&STUNIT=U01TO&BOUNDARY=%E5%85%A8%E5%9C%8B&SUB_BOUNDARY=%E8%8B%97%E6%A0%97%E7%B8%A3" -o /tmp/a.bin | head -40
-          echo "size: $(stat -c%s /tmp/a.bin 2>/dev/null || echo 0)"
-          file /tmp/a.bin
-          echo
-          echo "=== Variant B: same but code NOT double-encoded (%3d%3d raw as literal ==) ==="
-          curl -sS -i --max-time 30 -G "https://segis.moi.gov.tw/STATCloud/reqcontroller.file" \
-            --data-urlencode "method=filedown.downloadproductfile" \
-            --data-urlencode "code=JQLKJdMPLbtH75bn0vgGBg==" \
-            --data-urlencode "STTIME=114Y12M" \
-            --data-urlencode "STUNIT=U01TO" \
-            --data-urlencode "BOUNDARY=全國" \
-            --data-urlencode "SUB_BOUNDARY=苗栗縣" \
-            -o /tmp/b.bin | head -40
-          echo "size: $(stat -c%s /tmp/b.bin 2>/dev/null || echo 0)"
-          file /tmp/b.bin
-          echo
-          echo "=== Variant C: BOUNDARY=苗栗縣 (no SUB_BOUNDARY), STUNIT=U01TO ==="
-          curl -sS -i -G --max-time 30 "https://segis.moi.gov.tw/STATCloud/reqcontroller.file" \
-            --data-urlencode "method=filedown.downloadproductfile" \
-            --data-urlencode "code=JQLKJdMPLbtH75bn0vgGBg==" \
-            --data-urlencode "STTIME=114Y12M" \
-            --data-urlencode "STUNIT=U01TO" \
-            --data-urlencode "BOUNDARY=苗栗縣" \
-            -o /tmp/c.bin | head -40
-          echo "size: $(stat -c%s /tmp/c.bin 2>/dev/null || echo 0)"
-          file /tmp/c.bin
-          echo
-          echo "=== Variant D: known-good county-level code for comparison (fire dept) ==="
-          curl -sS -i --max-time 30 "https://segis.moi.gov.tw/STATCloud/reqcontroller.file?method=filedown.downloadproductfile&code=xy8BU%2FU8Zk4KmChsWymsKQ%3D%3D&STTIME=114Y&STUNIT=U01CO&BOUNDARY=%E5%85%A8%E5%9C%8B" -o /tmp/d.bin | head -40
-          echo "size: $(stat -c%s /tmp/d.bin 2>/dev/null || echo 0)"
-          file /tmp/d.bin
 
       - name: Run batch download
         run: python3 segis_downloader.py segis_datasets.json
