@@ -16,7 +16,7 @@ jobs:
           BASE_URL = "https://segis.moi.gov.tw/STATCloud/reqcontroller.file"
           OUT_DIR = Path("segis_downloads")
 
-          def build_url(code, sttime, stunit, boundary):
+          def build_url(code, sttime, stunit, boundary, sub_boundary=""):
               params = {
                   "method": "filedown.downloadproductfile",
                   "code": code,
@@ -24,12 +24,14 @@ jobs:
                   "STUNIT": stunit,
                   "BOUNDARY": boundary,
               }
+              if sub_boundary:
+                  params["SUB_BOUNDARY"] = sub_boundary
               return f"{BASE_URL}?{urllib.parse.urlencode(params)}"
 
           def download_one(entry):
               name = entry["name"]
               category = entry.get("category", "misc")
-              url = build_url(entry["code"], entry.get("sttime",""), entry.get("stunit","U01CO"), entry.get("boundary","全國"))
+              url = build_url(entry["code"], entry.get("sttime",""), entry.get("stunit","U01CO"), entry.get("boundary","全國"), entry.get("sub_boundary",""))
               req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (compatible; segis-downloader/1.0)"})
               try:
                   ctx = ssl.create_default_context()
@@ -44,6 +46,7 @@ jobs:
               out_dir.mkdir(parents=True, exist_ok=True)
               csv_saved = []
               has_miaoli = False
+              preview_lines = []
               try:
                   with zipfile.ZipFile(io.BytesIO(raw)) as zf:
                       for zi in zf.infolist():
@@ -54,11 +57,16 @@ jobs:
                               csv_saved.append(str(dest))
                               if "苗栗縣".encode("utf-8-sig") in data or "苗栗縣".encode("utf-8") in data:
                                   has_miaoli = True
+                              try:
+                                  text = data.decode("utf-8-sig", errors="replace")
+                                  preview_lines = text.splitlines()[:8]
+                              except Exception:
+                                  pass
               except zipfile.BadZipFile as e:
                   return {"name": name, "category": category, "ok": False, "error": f"bad zip: {e}", "url": url}
               if not csv_saved:
                   return {"name": name, "category": category, "ok": False, "error": "no csv in zip", "url": url}
-              return {"name": name, "category": category, "ok": True, "saved": csv_saved, "has_miaoli": has_miaoli, "size_bytes": len(raw)}
+              return {"name": name, "category": category, "ok": True, "saved": csv_saved, "has_miaoli": has_miaoli, "size_bytes": len(raw), "preview": preview_lines}
 
           def main():
               entries = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
@@ -69,6 +77,11 @@ jobs:
                   status = "OK" if r["ok"] else "FAIL"
                   miaoli = r.get("has_miaoli", "?")
                   print(f"[{status}] {r['category']}/{r['name']}  miaoli={miaoli}  {'' if r['ok'] else r.get('error')}")
+                  if r.get("preview"):
+                      print("  --- CSV preview (first 8 lines) ---")
+                      for line in r["preview"]:
+                          print("  " + line)
+                      print("  ------------------------------------")
               ok = sum(1 for r in results if r["ok"])
               miaoli_ok = sum(1 for r in results if r.get("has_miaoli"))
               print(f"\n總結：{ok}/{len(results)} 下載成功，{miaoli_ok}/{len(results)} 含苗栗縣資料")
@@ -83,18 +96,7 @@ jobs:
         run: |
           cat > segis_datasets.json << 'CONFIG_EOF'
           [
-            {"category": "工商業", "name": "113年行政區工廠概況統計_縣市", "code": "J3kRwtcp3WicX2taK9jjwA==", "sttime": "113Y", "stunit": "U01CO", "boundary": "全國"},
-            {"category": "農林漁牧", "name": "113年行政區農業概況統計_縣市", "code": "CyzvbfduHRFaGQYITnwwLg==", "sttime": "113Y", "stunit": "U01CO", "boundary": "全國"},
-            {"category": "農林漁牧", "name": "113年行政區林業概況統計_縣市", "code": "6pXCOTRJBP+aOQd+0J0QYw==", "sttime": "113Y", "stunit": "U01CO", "boundary": "全國"},
-            {"category": "農林漁牧", "name": "113年行政區漁業生產量統計_縣市", "code": "XcdUvLjBEARPnX1Ag0GPoQ==", "sttime": "113Y", "stunit": "U01CO", "boundary": "全國"},
-            {"category": "農林漁牧", "name": "113年行政區畜產產值統計_縣市", "code": "5BvBAcTZSeSH9e8iiLgDXg==", "sttime": "113Y", "stunit": "U01CO", "boundary": "全國"},
-            {"category": "消防", "name": "114年行政區消防設施及人力統計_縣市", "code": "xy8BU/U8Zk4KmChsWymsKQ==", "sttime": "114Y", "stunit": "U01CO", "boundary": "全國"},
-            {"category": "消防", "name": "114年行政區火災統計_縣市", "code": "qpggqre7bsSLXCVrVysO7A==", "sttime": "114Y", "stunit": "U01CO", "boundary": "全國"},
-            {"category": "治安", "name": "114年行政區刑案統計_縣市", "code": "i9qwjot3UkTmi1B44A76Hg==", "sttime": "114Y", "stunit": "U01CO", "boundary": "全國"},
-            {"category": "治安", "name": "114年行政區竊盜犯罪統計_縣市", "code": "OToQQES1fj9Xyi9c2vc9lQ==", "sttime": "114Y", "stunit": "U01CO", "boundary": "全國"},
-            {"category": "治安", "name": "114年行政區暴力犯罪統計_縣市", "code": "taBToEgYjRb9AOlIDMBttg==", "sttime": "114Y", "stunit": "U01CO", "boundary": "全國"},
-            {"category": "環保", "name": "114年行政區垃圾處理概況統計_縣市", "code": "6MVz/3SOIe/HDUiMpsPwcw==", "sttime": "114Y", "stunit": "U01CO", "boundary": "全國"},
-            {"category": "環保", "name": "113年行政區環境汙染源概況統計_縣市", "code": "Q0iASIA1p9l67hS7vqVk7w==", "sttime": "113Y", "stunit": "U01CO", "boundary": "全國"}
+            {"category": "人口特性", "name": "114年12月行政區人口統計_鄉鎮市區_苗栗縣", "code": "JQLKJdMPLbtH75bn0vgG8g==", "sttime": "114Y12M", "stunit": "U01TO", "boundary": "全國", "sub_boundary": "苗栗縣"}
           ]
           CONFIG_EOF
 
