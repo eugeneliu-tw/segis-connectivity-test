@@ -85,15 +85,15 @@ jobs:
           [
             {"category": "工商業", "name": "113年行政區工廠概況統計_縣市", "code": "J3kRwtcp3WicX2taK9jjwA==", "sttime": "113Y", "stunit": "U01CO", "boundary": "全國"},
             {"category": "農林漁牧", "name": "113年行政區農業概況統計_縣市", "code": "CyzvbfduHRFaGQYITnwwLg==", "sttime": "113Y", "stunit": "U01CO", "boundary": "全國"},
-            {"category": "農林漁牧", "name": "113年行政區林業概況統計_縣市", "code": "6pXCOTRJBP+a0Qd+0J0QYw==", "sttime": "113Y", "stunit": "U01CO", "boundary": "全國"},
+            {"category": "農林漁牧", "name": "113年行政區林業概況統計_縣市", "code": "6pXCOTRJBP+aOQd+0J0QYw==", "sttime": "113Y", "stunit": "U01CO", "boundary": "全國"},
             {"category": "農林漁牧", "name": "113年行政區漁業生產量統計_縣市", "code": "XcdUvLjBEARPnX1Ag0GPoQ==", "sttime": "113Y", "stunit": "U01CO", "boundary": "全國"},
-            {"category": "農林漁牧", "name": "113年行政區畜產產值統計_縣市", "code": "5BvBACTZSeSH9e8iiLgDXg==", "sttime": "113Y", "stunit": "U01CO", "boundary": "全國"},
+            {"category": "農林漁牧", "name": "113年行政區畜產產值統計_縣市", "code": "5BvBAcTZSeSH9e8iiLgDXg==", "sttime": "113Y", "stunit": "U01CO", "boundary": "全國"},
             {"category": "消防", "name": "114年行政區消防設施及人力統計_縣市", "code": "xy8BU/U8Zk4KmChsWymsKQ==", "sttime": "114Y", "stunit": "U01CO", "boundary": "全國"},
             {"category": "消防", "name": "114年行政區火災統計_縣市", "code": "qpggqre7bsSLXCVrVysO7A==", "sttime": "114Y", "stunit": "U01CO", "boundary": "全國"},
             {"category": "治安", "name": "114年行政區刑案統計_縣市", "code": "i9qwjot3UkTmi1B44A76Hg==", "sttime": "114Y", "stunit": "U01CO", "boundary": "全國"},
             {"category": "治安", "name": "114年行政區竊盜犯罪統計_縣市", "code": "OToQQES1fj9Xyi9c2vc9lQ==", "sttime": "114Y", "stunit": "U01CO", "boundary": "全國"},
             {"category": "治安", "name": "114年行政區暴力犯罪統計_縣市", "code": "taBToEgYjRb9AOlIDMBttg==", "sttime": "114Y", "stunit": "U01CO", "boundary": "全國"},
-            {"category": "環保", "name": "114年行政區垃圾處理概況統計_縣市", "code": "6MVz/3SOIe/HDUiMpsPwcw=", "sttime": "114Y", "stunit": "U01CO", "boundary": "全國"},
+            {"category": "環保", "name": "114年行政區垃圾處理概況統計_縣市", "code": "6MVz/3SOIe/HDUiMpsPwcw==", "sttime": "114Y", "stunit": "U01CO", "boundary": "全國"},
             {"category": "環保", "name": "113年行政區環境汙染源概況統計_縣市", "code": "Q0iASIA1p9l67hS7vqVk7w==", "sttime": "113Y", "stunit": "U01CO", "boundary": "全國"}
           ]
           CONFIG_EOF
