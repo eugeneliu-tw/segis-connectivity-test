@@ -1,0 +1,110 @@
+name: Batch Download SEGIS Datasets
+
+on:
+  workflow_dispatch:
+
+jobs:
+  batch-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Write downloader script
+        run: |
+          cat > segis_downloader.py << 'DOWNLOADER_EOF'
+          import json, sys, io, zipfile, urllib.parse, urllib.request, ssl
+          from pathlib import Path
+
+          BASE_URL = "https://segis.moi.gov.tw/STATCloud/reqcontroller.file"
+          OUT_DIR = Path("segis_downloads")
+
+          def build_url(code, sttime, stunit, boundary):
+              params = {
+                  "method": "filedown.downloadproductfile",
+                  "code": code,
+                  "STTIME": sttime,
+                  "STUNIT": stunit,
+                  "BOUNDARY": boundary,
+              }
+              return f"{BASE_URL}?{urllib.parse.urlencode(params)}"
+
+          def download_one(entry):
+              name = entry["name"]
+              category = entry.get("category", "misc")
+              url = build_url(entry["code"], entry.get("sttime",""), entry.get("stunit","U01CO"), entry.get("boundary","全國"))
+              req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (compatible; segis-downloader/1.0)"})
+              try:
+                  ctx = ssl.create_default_context()
+                  with urllib.request.urlopen(req, timeout=30, context=ctx) as resp:
+                      raw = resp.read()
+                      status = resp.status
+              except Exception as e:
+                  return {"name": name, "category": category, "ok": False, "error": str(e), "url": url}
+              if not raw.startswith(b"PK"):
+                  return {"name": name, "category": category, "ok": False, "error": f"HTTP {status} not zip: {raw[:120]!r}", "url": url}
+              out_dir = OUT_DIR / category
+              out_dir.mkdir(parents=True, exist_ok=True)
+              csv_saved = []
+              has_miaoli = False
+              try:
+                  with zipfile.ZipFile(io.BytesIO(raw)) as zf:
+                      for zi in zf.infolist():
+                          if zi.filename.lower().endswith(".csv"):
+                              data = zf.read(zi)
+                              dest = out_dir / f"{name}.csv"
+                              dest.write_bytes(data)
+                              csv_saved.append(str(dest))
+                              if "苗栗縣".encode("utf-8-sig") in data or "苗栗縣".encode("utf-8") in data:
+                                  has_miaoli = True
+              except zipfile.BadZipFile as e:
+                  return {"name": name, "category": category, "ok": False, "error": f"bad zip: {e}", "url": url}
+              if not csv_saved:
+                  return {"name": name, "category": category, "ok": False, "error": "no csv in zip", "url": url}
+              return {"name": name, "category": category, "ok": True, "saved": csv_saved, "has_miaoli": has_miaoli, "size_bytes": len(raw)}
+
+          def main():
+              entries = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+              results = []
+              for entry in entries:
+                  r = download_one(entry)
+                  results.append(r)
+                  status = "OK" if r["ok"] else "FAIL"
+                  miaoli = r.get("has_miaoli", "?")
+                  print(f"[{status}] {r['category']}/{r['name']}  miaoli={miaoli}  {'' if r['ok'] else r.get('error')}")
+              ok = sum(1 for r in results if r["ok"])
+              miaoli_ok = sum(1 for r in results if r.get("has_miaoli"))
+              print(f"\n總結：{ok}/{len(results)} 下載成功，{miaoli_ok}/{len(results)} 含苗栗縣資料")
+              OUT_DIR.mkdir(parents=True, exist_ok=True)
+              (OUT_DIR / "_report.json").write_text(json.dumps(results, ensure_ascii=False, indent=2), encoding="utf-8")
+
+          if __name__ == "__main__":
+              main()
+          DOWNLOADER_EOF
+
+      - name: Write dataset config
+        run: |
+          cat > segis_datasets.json << 'CONFIG_EOF'
+          [
+            {"category": "工商業", "name": "113年行政區工廠概況統計_縣市", "code": "J3kRwtcp3WicX2taK9jjwA==", "sttime": "113Y", "stunit": "U01CO", "boundary": "全國"},
+            {"category": "農林漁牧", "name": "113年行政區農業概況統計_縣市", "code": "CyzvbfduHRFaGQYITnwwLg==", "sttime": "113Y", "stunit": "U01CO", "boundary": "全國"},
+            {"category": "農林漁牧", "name": "113年行政區林業概況統計_縣市", "code": "6pXCOTRJBP+a0Qd+0J0QYw==", "sttime": "113Y", "stunit": "U01CO", "boundary": "全國"},
+            {"category": "農林漁牧", "name": "113年行政區漁業生產量統計_縣市", "code": "XcdUvLjBEARPnX1Ag0GPoQ==", "sttime": "113Y", "stunit": "U01CO", "boundary": "全國"},
+            {"category": "農林漁牧", "name": "113年行政區畜產產值統計_縣市", "code": "5BvBACTZSeSH9e8iiLgDXg==", "sttime": "113Y", "stunit": "U01CO", "boundary": "全國"},
+            {"category": "消防", "name": "114年行政區消防設施及人力統計_縣市", "code": "xy8BU/U8Zk4KmChsWymsKQ==", "sttime": "114Y", "stunit": "U01CO", "boundary": "全國"},
+            {"category": "消防", "name": "114年行政區火災統計_縣市", "code": "qpggqre7bsSLXCVrVysO7A==", "sttime": "114Y", "stunit": "U01CO", "boundary": "全國"},
+            {"category": "治安", "name": "114年行政區刑案統計_縣市", "code": "i9qwjot3UkTmi1B44A76Hg==", "sttime": "114Y", "stunit": "U01CO", "boundary": "全國"},
+            {"category": "治安", "name": "114年行政區竊盜犯罪統計_縣市", "code": "OToQQES1fj9Xyi9c2vc9lQ==", "sttime": "114Y", "stunit": "U01CO", "boundary": "全國"},
+            {"category": "治安", "name": "114年行政區暴力犯罪統計_縣市", "code": "taBToEgYjRb9AOlIDMBttg==", "sttime": "114Y", "stunit": "U01CO", "boundary": "全國"},
+            {"category": "環保", "name": "114年行政區垃圾處理概況統計_縣市", "code": "6MVz/3SOIe/HDUiMpsPwcw=", "sttime": "114Y", "stunit": "U01CO", "boundary": "全國"},
+            {"category": "環保", "name": "113年行政區環境汙染源概況統計_縣市", "code": "Q0iASIA1p9l67hS7vqVk7w==", "sttime": "113Y", "stunit": "U01CO", "boundary": "全國"}
+          ]
+          CONFIG_EOF
+
+      - name: Run batch download
+        run: python3 segis_downloader.py segis_datasets.json
+
+      - name: Upload results as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: segis-batch-results
+          path: segis_downloads/
+          if-no-files-found: warn
